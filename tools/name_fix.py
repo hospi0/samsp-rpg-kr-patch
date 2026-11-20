@@ -16,7 +16,8 @@ RULES = [
     ('法鈴', H + r'법방울', '호린'),
     ('恐山', H + r'오소레산', '오소레야마'),
     ('アンブ', H + r'앙브', '암브'),
-    ('安生村', H + r'(?:안생촌|안조 ?마을)', '안조무라'),
+    ('安生村', H + r'(?:안생촌|안조무라|안조마을)', '안조 마을'), ('安城村', H + r'(?:안조무라|안조마을)', '안조 마을'),   # 村 = «마을»(하스피 2026-11-21)
+    ('忍野村', H + r'(?:오시노무라|오시노마을)', '오시노 마을'),
     ('ステア', H + r'스테어', '스테아'),
     ('吽号', r'훔고', '운고'),
     ('京', H + r'교토', '쿄토'),
@@ -71,6 +72,7 @@ def main():
             for need, pat, good in RULES:
                 if need in jp and (c[0], need) not in SKIP_RULE: ko = fix(ko, pat, good)
             for pat, good in BY_ID.get(c[0], []): ko = re.sub(pat, good, ko)
+            ko = re.sub(r'(?<=마을)(다|야)(?![가-힣])', lambda m: '이' + m.group(1), ko)   # 받침 있는 바뀐 이름 뒤 서술격(안조 마을이다)
             if ko != c[5]: new[c[0]] = (c[5], ko)
     for i, (a, b) in new.items(): print(i, '|', a.replace('\n', ''), '\n   →', b)
     print('바뀔 줄 %d' % len(new))

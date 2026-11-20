@@ -108,9 +108,11 @@ def check_row(i, kind, ko, jp, budget, err, warn, LINE=LINE):
             parts_k = post_k.split('{0900}'); parts_j = post_j.split('{0900}')
             q = TOKEN.sub('', parts_k[0])
             if '⏎' in q or len(q) > LINE: err.append((i, '선택 질문 줄 %d칸(한 줄 최대 %d): %s' % (len(q.replace('⏎', '')), LINE, q), jp, ko))
-            jo = max([len(TOKEN.sub('', x)) for x in parts_j[1:]] or [0])
+            # 항목 = 6칸 이하(오류): 1ST.BIN 0x300E6/0x30174/0x301B6 항목 쓰기 반복이 최대 7번(mov #6,r9) — 7번째 호출이 {0900} 을 읽어야
+            # 항목 끝을 넘김. 7칸 이상이면 {0900} 이 남아 다음 항목이 빈 항목으로 끝남(2026-11-21 실기 D05812 «저거는 저거» 사라짐)
             for x in parts_k[1:]:
-                if len(TOKEN.sub('', x)) > max(jo, 4): warn.append((i, '선택 항목 %d칸 > 원문 항목 최대 %d칸: %s' % (len(TOKEN.sub('', x)), max(jo, 4), x), jp, ko))
+                n = len(TOKEN.sub('', x).replace('⏎', ''))
+                if n > 6: err.append((i, '선택 항목 %d칸(최대 6 — 넘으면 다음 항목이 사라짐): %s' % (n, x), jp, ko))
             return
         if '{0900}' in jp: warn.append((i, '선택지 줄 — 폭 검사 생략', ko)); return
         jpp = [p.split('⏎') for p in PAGE.split(jp)]

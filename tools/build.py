@@ -38,6 +38,7 @@ BLOCK_MAX = 0x7000
 def load_tsv():
     tr = {}; meta = json.load(open(os.path.join(ROOT, 'work', 'extract.json'), encoding='utf8'))
     meta.update(json.load(open(os.path.join(ROOT, 'work', 'extract_place.json'), encoding='utf8')))   # 장소 이름(종류 26, tools/extract_place.py)
+    meta.update(json.load(open(os.path.join(ROOT, 'work', 'extract_fmt.json'), encoding='utf8')))     # 1ST.BIN «%s» 섞인 문장 6(미추출 전수조사 2026-11-21, tools/leftover_scan.py)
     for f in sorted(glob.glob(os.path.join(X.TSV_DIR, 'samsp_*.tsv'))):
         for n, l in enumerate(open(f, encoding='utf8').read().split('\n')[1:], 2):
             p = l.split('\t')
@@ -275,6 +276,9 @@ def main(write):
         o = m['off']; jw = tuple(int(w, 16) for w in m['words']); nw = final[i]
         assert tuple(struct.unpack_from('>%dH' % len(jw), exe, o)) == jw, (i, '원문 불일치')
         bw = m.get('budget', len(jw)); assert len(nw) <= bw
+        if m.get('exact'):                      # 뒤에 0000 이 아니라 {2573}(%s) 가 바로 이어지는 앞 조각 — 길이 정확히 같게, 끝 0 안 씀
+            assert len(nw) == len(jw), (i, '앞 조각은 원문과 같은 길이여야 함', len(nw), len(jw))
+            exe[o:o + 2 * len(nw)] = struct.pack('>%dH' % len(nw), *nw); nexe += 1; continue
         end = o + 2 * (max(bw, len(jw)) + 1)
         assert all(x == 0 for x in exe[o + 2 * len(jw):end]), (i, '칸 뒤가 0 아님')
         exe[o:end] = struct.pack('>%dH' % len(nw), *nw) + bytes(end - o - 2 * len(nw)); nexe += 1
